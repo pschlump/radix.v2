@@ -1,8 +1,10 @@
 package pool
 
 import (
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/pschlump/radix.v2/redis"
 )
+
+// "github.com/pschlump/radix.v2/pool"
 
 // Pool is a simple connection pool for redis Clients. It will create a small
 // pool of initial connections, and if more connections are needed they will be
@@ -108,4 +110,23 @@ func (p *Pool) Empty() {
 			return
 		}
 	}
+}
+
+// Perform authorization on all the connections in the pool.  Return error
+// if one of the connections fails to authorize.
+func NewAuth(network, addr string, size int, AuthKey string) (*Pool, error) {
+	df := func(network, addr string) (*redis.Client, error) {
+		client, err := redis.Dial(network, addr)
+		if err != nil {
+			return nil, err
+		}
+		if err = client.Cmd("AUTH", AuthKey).Err; err != nil {
+			client.Close()
+			return nil, err
+		}
+		return client, nil
+	}
+	// p, err := pool.NewCustom("tcp", "127.0.0.1:6379", 10, df) 	// example from documentation
+	// return NewCustom(network, addr, size, redis.Dial)		// standard dial
+	return NewCustom(network, addr, size, df)
 }
