@@ -8,16 +8,42 @@ import (
 	"github.com/pschlump/radix.v2/redis"
 )
 
-func TestSubscribe(t *testing.T) {
-	pub, err := redis.DialTimeout("tcp", "localhost:6379", time.Duration(10)*time.Second)
+var redis_host = "192.168.0.133"
+var redis_port = "6379"
+var redis_auth = "lLJSmkccYJiVEwskr1RM4MWIaBM"
+
+// Create 2 connections to Redis, one for publishing 'pub' and the second 'client' that will be used
+// for subscribe.
+func Connect(t *testing.T) (pub *redis.Client, client *redis.Client) {
+	var err error
+	pub, err = redis.DialTimeout("tcp", redis_host+":"+redis_port, time.Duration(10)*time.Second)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if redis_auth != "" {
+		err = pub.Cmd("AUTH", redis_auth).Err
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	client, err := redis.DialTimeout("tcp", "localhost:6379", time.Duration(10)*time.Second)
+	client, err = redis.DialTimeout("tcp", redis_host+":"+redis_port, time.Duration(10)*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
+	if redis_auth != "" {
+		err = client.Cmd("AUTH", redis_auth).Err
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	return
+}
+
+func TestSubscribe(t *testing.T) {
+	pub, client := Connect(t)
+
 	sub := NewSubClient(client)
 
 	channel := "subTestChannel"
@@ -33,7 +59,7 @@ func TestSubscribe(t *testing.T) {
 	}
 
 	if sr.SubCount != 1 {
-		t.Fatal(fmt.Sprintf("Unexpected subscription count, Expected: 0, Found: %d", sr.SubCount))
+		t.Fatal(fmt.Sprintf("Unexpected subscription count, Expected: 1, Found: %d", sr.SubCount))
 	}
 
 	r := pub.Cmd("PUBLISH", channel, message)
@@ -79,15 +105,20 @@ func TestSubscribe(t *testing.T) {
 }
 
 func TestPSubscribe(t *testing.T) {
-	pub, err := redis.DialTimeout("tcp", "localhost:6379", time.Duration(10)*time.Second)
-	if err != nil {
-		t.Fatal(err)
-	}
+	pub, client := Connect(t)
 
-	client, err := redis.DialTimeout("tcp", "localhost:6379", time.Duration(10)*time.Second)
-	if err != nil {
-		t.Fatal(err)
-	}
+	/*
+		pub, err := redis.DialTimeout("tcp", "localhost:6379", time.Duration(10)*time.Second)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		client, err := redis.DialTimeout("tcp", "localhost:6379", time.Duration(10)*time.Second)
+		if err != nil {
+			t.Fatal(err)
+		}
+	*/
+
 	sub := NewSubClient(client)
 
 	pattern := "patternThen*"
@@ -103,7 +134,7 @@ func TestPSubscribe(t *testing.T) {
 	}
 
 	if sr.SubCount != 1 {
-		t.Fatal(fmt.Sprintf("Unexpected subscription count, Expected: 0, Found: %d", sr.SubCount))
+		t.Fatal(fmt.Sprintf("Unexpected subscription count, Expected: 1, Found: %d", sr.SubCount))
 	}
 
 	r := pub.Cmd("PUBLISH", "patternThenHello", message)
