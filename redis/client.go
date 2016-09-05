@@ -9,10 +9,6 @@ import (
 	"time"
 )
 
-const (
-	bufSize int = 4096
-)
-
 // ErrPipelineEmpty is returned from PipeResp() to indicate that all commands
 // which were put into the pipeline have had their responses read
 var ErrPipelineEmpty = errors.New("pipeline queue empty")
@@ -29,15 +25,14 @@ type Client struct {
 	completed, completedHead []*Resp
 
 	// The network/address of the redis instance this client is connected to.
-	// These will be wahtever strings were passed into the Dial function when
+	// These will be whatever strings were passed into the Dial function when
 	// creating this connection
 	Network, Addr string
 
-	// The most recent critical network error which occured when either reading
-	// or writing. A critical network error is one in which the connection was
-	// found to be no longer usable; in essence, any error except a timeout.
-	// Close is automatically called on the client when it encounters a critical
-	// network error
+	// The most recent network error which occurred when either reading
+	// or writing. A critical network error is basically any non-application
+	// level error, e.g. a timeout, disconnect, etc... Close is automatically
+	// called on the client when it encounters a network error
 	LastCritical error
 }
 
@@ -124,7 +119,7 @@ func (c *Client) PipeResp() *Resp {
 	return c.PipeResp()
 }
 
-// PipeClient clears the contents of the current pipeline queue, both commands
+// PipeClear clears the contents of the current pipeline queue, both commands
 // queued by PipeAppend which have yet to be sent and responses which have yet
 // to be retrieved through PipeResp. The first returned int will be the number
 // of pending commands dropped, the second will be the number of pending
@@ -152,7 +147,7 @@ func (c *Client) ReadResp() *Resp {
 		c.conn.SetReadDeadline(time.Now().Add(c.timeout))
 	}
 	r := c.respReader.Read()
-	if r.IsType(IOErr) && !IsTimeout(r) {
+	if r.IsType(IOErr) {
 		c.LastCritical = r.Err
 		c.Close()
 	}

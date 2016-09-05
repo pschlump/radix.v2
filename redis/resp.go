@@ -73,6 +73,42 @@ type Resp struct {
 	Err error
 }
 
+func (rt RespType) String() string {
+	rv := ""
+	com := ""
+
+	if (SimpleStr & rt) != 0 {
+		rv = com + "SimpleStr"
+		com = "|"
+	}
+	if (BulkStr & rt) != 0 {
+		rv = com + "BulkStr"
+		com = "|"
+	}
+	if (IOErr & rt) != 0 {
+		rv = com + "IOErr"
+		com = "|"
+	}
+	if (AppErr & rt) != 0 {
+		rv = com + "AppErr"
+		com = "|"
+	}
+	if (Int & rt) != 0 {
+		rv = com + "Int"
+		com = "|"
+	}
+	if (Array & rt) != 0 {
+		rv = com + "Array"
+		com = "|"
+	}
+	if (Nil & rt) != 0 {
+		rv = com + "Nil"
+		com = "|"
+	}
+
+	return rv
+}
+
 // NewResp takes the given value and interprets it into a resp encoded byte
 // stream
 func NewResp(v interface{}) *Resp {
@@ -254,7 +290,16 @@ func readArray(r *bufio.Reader) (Resp, error) {
 //	isStrOrInt := r.IsType(redis.Str | redis.Int)
 //
 func (r *Resp) IsType(t RespType) bool {
-	return r.typ&t > 0
+	// return r.typ&t > 0
+	return (r.typ & t) != 0
+}
+
+// PJS - added
+func (r *Resp) GetType() RespType {
+	return r.typ
+}
+func (r *Resp) GetTypeUint() uint {
+	return uint(r.typ)
 }
 
 // WriteTo writes the resp encoded form of the Resp to the given writer,

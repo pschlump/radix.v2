@@ -112,8 +112,9 @@ func (p *Pool) Empty() {
 	}
 }
 
-// Perform authorization on all the connections in the pool.  Return error
+// NewAuth performs authorization on all the connections in the pool.  Return error
 // if one of the connections fails to authorize.
+// PJS - added.
 func NewAuth(network, addr string, size int, AuthKey string) (*Pool, error) {
 	df := func(network, addr string) (*redis.Client, error) {
 		client, err := redis.Dial(network, addr)
