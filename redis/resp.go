@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/pschlump/godebug"
 )
 
 var (
@@ -298,6 +300,8 @@ func (r *Resp) IsType(t RespType) bool {
 func (r *Resp) GetType() RespType {
 	return r.typ
 }
+
+// PJS - added
 func (r *Resp) GetTypeUint() uint {
 	return uint(r.typ)
 }
@@ -429,6 +433,7 @@ func (r *Resp) List() ([]string, error) {
 		}
 		s, err := m[i].Str()
 		if err != nil {
+			fmt.Printf("This is the error point, %s\n", godebug.LF())
 			return nil, err
 		}
 		l[i] = s
