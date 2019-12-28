@@ -7,6 +7,8 @@ import (
 	"net"
 	"reflect"
 	"time"
+
+	"github.com/pschlump/godebug"
 )
 
 // ErrPipelineEmpty is returned from PipeResp() to indicate that all commands
@@ -67,6 +69,9 @@ func DialTimeout(network, addr string, timeout time.Duration) (*Client, error) {
 
 // Dial connects to the given Redis server.
 func Dial(network, addr string) (*Client, error) {
+	if db8 {
+		fmt.Printf("Dial: %s\n", godebug.LF())
+	}
 	return DialTimeout(network, addr, time.Duration(0))
 }
 
@@ -229,3 +234,5 @@ func KeyFromArgs(args ...interface{}) (string, error) {
 		}
 	}
 }
+
+const db8 = false
